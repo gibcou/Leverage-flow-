@@ -235,6 +235,10 @@ export default function App() {
             <a href="#how-it-works" className="hover:text-blue-500 transition-colors duration-200">How It Works</a>
             <a href="#pricing" className="hover:text-blue-500 transition-colors duration-200">Pricing</a>
             <a href="#faq" className="hover:text-blue-500 transition-colors duration-200">FAQ</a>
+            <a href="/demo/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-blue-400 hover:text-blue-300 transition-colors duration-200">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block animate-pulse"></span>
+              Live Demo
+            </a>
           </nav>
           <a href="#contact" onClick={scrollToContact} className="text-xs font-semibold px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white border border-slate-700/50 rounded-lg transition-all">
             Book Free Audit
@@ -263,6 +267,10 @@ export default function App() {
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 mb-6">
               <a href="#pricing" className="px-8 py-4 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-semibold rounded-xl text-base shadow-lg shadow-blue-500/20 transition-all duration-300 transform hover:scale-[1.02] text-center">
                 See What We Can Automate →
+              </a>
+              <a href="/demo/" target="_blank" rel="noopener noreferrer" className="px-8 py-4 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 font-semibold border border-emerald-500/30 rounded-xl text-base text-center transition-all flex items-center justify-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0"></span>
+                Watch Live Demo
               </a>
               <a href="#contact" onClick={scrollToContact} className="px-8 py-4 bg-slate-900 hover:bg-slate-800 text-slate-300 font-medium border border-slate-800 rounded-xl text-base text-center transition-all">
                 Book Free Audit
