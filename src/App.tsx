@@ -231,6 +231,7 @@ export default function App() {
             <span className="font-sans font-bold text-xl text-white tracking-tight">LeverageFlow</span>
           </div>
           <nav className="hidden md:flex space-x-8 text-sm font-medium text-slate-400">
+            <a href="#services" className="hover:text-blue-500 transition-colors duration-200">Services</a>
             <a href="#how-it-works" className="hover:text-blue-500 transition-colors duration-200">How It Works</a>
             <a href="#pricing" className="hover:text-blue-500 transition-colors duration-200">Pricing</a>
             <a href="#faq" className="hover:text-blue-500 transition-colors duration-200">FAQ</a>
@@ -348,7 +349,89 @@ export default function App() {
         </div>
       </section>
 
-      {/* 5. How It Works Section */}
+      {/* 5. Services Section */}
+      <section id="services" className="bg-[#0B0F19] py-20 border-b border-slate-800/40">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="text-center mb-14">
+            <span className="font-mono text-xs text-blue-400 uppercase tracking-widest font-semibold mb-2 block">
+              WHAT WE DO
+            </span>
+            <h2 className="text-3xl md:text-4xl font-sans font-bold text-white tracking-tight mb-4">
+              We Build the Systems.<br />You Run the Business.
+            </h2>
+            <p className="text-slate-400 text-base max-w-2xl mx-auto">
+              Think of us as your automation team on retainer. You tell us what's slowing you down — we go build it, test it, and keep it running.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-14">
+            {/* Service 1 */}
+            <div className="group bg-slate-900/60 border border-slate-800 rounded-2xl p-8 hover:border-blue-500/40 hover:bg-slate-800/60 transition-all duration-300">
+              <div className="text-3xl mb-4">🤖</div>
+              <h3 className="text-lg font-bold text-white mb-3">AI Agents That Work For You</h3>
+              <p className="text-sm text-slate-400 leading-relaxed">
+                We build AI-powered assistants that respond to leads, qualify prospects, draft proposals, and update your CRM — without anyone on your team lifting a finger.
+              </p>
+            </div>
+            {/* Service 2 */}
+            <div className="group bg-slate-900/60 border border-slate-800 rounded-2xl p-8 hover:border-blue-500/40 hover:bg-slate-800/60 transition-all duration-300">
+              <div className="text-3xl mb-4">🔗</div>
+              <h3 className="text-lg font-bold text-white mb-3">Connect All Your Tools</h3>
+              <p className="text-sm text-slate-400 leading-relaxed">
+                HubSpot, Slack, Gmail, Notion, QuickBooks — we wire them all together so data flows automatically. No more copy-pasting between apps or chasing down updates.
+              </p>
+            </div>
+            {/* Service 3 */}
+            <div className="group bg-slate-900/60 border border-slate-800 rounded-2xl p-8 hover:border-blue-500/40 hover:bg-slate-800/60 transition-all duration-300">
+              <div className="text-3xl mb-4">📊</div>
+              <h3 className="text-lg font-bold text-white mb-3">Reporting on Autopilot</h3>
+              <p className="text-sm text-slate-400 leading-relaxed">
+                Weekly client reports, KPI dashboards, and performance updates — generated and sent automatically in your brand template. Zero manual work required.
+              </p>
+            </div>
+          </div>
+
+          {/* Simple before/after comparison */}
+          <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+            <div className="bg-red-500/5 border border-red-500/20 rounded-2xl p-8">
+              <h4 className="text-red-400 font-bold text-sm uppercase tracking-wider mb-5 flex items-center gap-2">
+                <span>✗</span> Without LeverageFlow
+              </h4>
+              <ul className="space-y-3 text-sm text-slate-400">
+                <li className="flex items-start gap-2"><span className="text-red-400 mt-0.5 shrink-0">✗</span> Hours spent manually entering data into your CRM</li>
+                <li className="flex items-start gap-2"><span className="text-red-400 mt-0.5 shrink-0">✗</span> Leads slip through the cracks because no one followed up</li>
+                <li className="flex items-start gap-2"><span className="text-red-400 mt-0.5 shrink-0">✗</span> Friday afternoons building client reports by hand</li>
+                <li className="flex items-start gap-2"><span className="text-red-400 mt-0.5 shrink-0">✗</span> Hiring $60k+ ops staff for tasks a system could handle</li>
+                <li className="flex items-start gap-2"><span className="text-red-400 mt-0.5 shrink-0">✗</span> Your tools don't talk to each other — ever</li>
+              </ul>
+            </div>
+            <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-2xl p-8">
+              <h4 className="text-emerald-400 font-bold text-sm uppercase tracking-wider mb-5 flex items-center gap-2">
+                <span>✓</span> With LeverageFlow
+              </h4>
+              <ul className="space-y-3 text-sm text-slate-400">
+                <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5 shrink-0">✓</span> CRM updates itself the moment a lead fills out a form</li>
+                <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5 shrink-0">✓</span> Every lead gets a personalised follow-up within minutes</li>
+                <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5 shrink-0">✓</span> Client reports send themselves — branded and on time</li>
+                <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5 shrink-0">✓</span> Scale output without adding headcount</li>
+                <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5 shrink-0">✓</span> All your tools synced and talking in real time</li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="text-center mt-12">
+            <a
+              href="#contact"
+              onClick={(e) => { e.preventDefault(); contactRef.current?.scrollIntoView({ behavior: 'smooth' }) }}
+              className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-blue-500/20 transition-all transform hover:scale-[1.02]"
+            >
+              See What We Can Automate For You →
+            </a>
+          </div>
+        </div>
+      </section>
+
+      {/* 6. How It Works Section */}
       <section id="how-it-works" className="bg-slate-900 py-20 border-b border-slate-800/40">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-16">
@@ -740,6 +823,7 @@ export default function App() {
           <div>
             <h4 className="text-white font-bold text-xs uppercase tracking-wider mb-4">Quick Links</h4>
             <ul className="space-y-2 text-xs">
+              <li><a href="#services" className="hover:text-blue-500 transition-colors">Services</a></li>
               <li><a href="#how-it-works" className="hover:text-blue-500 transition-colors">How It Works</a></li>
               <li><a href="#pricing" className="hover:text-blue-500 transition-colors">Pricing</a></li>
               <li><a href="#faq" className="hover:text-blue-500 transition-colors">FAQ</a></li>
