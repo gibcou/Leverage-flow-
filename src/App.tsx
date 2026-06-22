@@ -1,33 +1,51 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { 
-  Check, 
-  X, 
-  ArrowRight, 
-  Loader2, 
-  CreditCard, 
-  ShieldCheck, 
-  Zap, 
-  ChevronDown, 
-  MessageSquare, 
-  TrendingUp, 
-  FileText, 
-  Layers, 
-  Lock 
+import {
+  Check,
+  X,
+  ArrowRight,
+  Loader2,
+  ShieldCheck,
+  Zap,
+  ChevronDown,
+  MessageSquare,
+  TrendingUp,
+  FileText,
+  Layers,
+  Lock,
+  Send,
+  CheckCircle2
 } from 'lucide-react'
 
 // Import assets
 import logoImg from './assets/logo.png'
 import heroImg from './assets/hero-flow.png'
 
+// ─── STRIPE PAYMENT LINK URLs ────────────────────────────────────────────────
+// Go to https://dashboard.stripe.com/payment-links → Create link for each plan
+// Set price to $1,999/mo recurring (Starter) and $3,499/mo recurring (Growth)
+// Then paste the links below.
+const STRIPE_LINKS = {
+  starter: 'https://buy.stripe.com/REPLACE_WITH_STARTER_PAYMENT_LINK',
+  growth:  'https://buy.stripe.com/REPLACE_WITH_GROWTH_PAYMENT_LINK',
+}
+
+// ─── FORMSPREE ENDPOINT ───────────────────────────────────────────────────────
+// Go to https://formspree.io → Create free account → New Form → copy the endpoint
+// It looks like: https://formspree.io/f/xabcdefg
+// Submissions will arrive at gibcoutley@gmail.com
+const FORMSPREE_ENDPOINT = 'https://formspree.io/f/REPLACE_WITH_YOUR_FORM_ID'
+
 interface Plan {
   id: string
   name: string
   price: string
+  priceNum: string
   description: string
   features: React.ReactNode[]
   recommended?: boolean
   buttonText: string
+  stripeLink: string
 }
 
 const plans: Plan[] = [
@@ -35,6 +53,7 @@ const plans: Plan[] = [
     id: 'starter',
     name: 'Starter Plan',
     price: '$1,999',
+    priceNum: '1,999',
     description: 'Perfect for small agencies looking to start their automation journey.',
     features: [
       <span><strong>1 active</strong> request at a time</span>,
@@ -44,12 +63,14 @@ const plans: Plan[] = [
       <span>Email + Slack support (business hours)</span>,
       <span>No long-term contract, cancel anytime</span>,
     ],
-    buttonText: 'Start with Starter →'
+    buttonText: 'Start with Starter →',
+    stripeLink: STRIPE_LINKS.starter,
   },
   {
     id: 'growth',
     name: 'Growth Plan',
     price: '$3,499',
+    priceNum: '3,499',
     description: 'For growing businesses that need more bandwidth and advanced AI.',
     features: [
       <span><strong>2 active</strong> requests at a time</span>,
@@ -60,7 +81,8 @@ const plans: Plan[] = [
       <span>No long-term contract, cancel anytime</span>,
     ],
     recommended: true,
-    buttonText: 'Go Growth →'
+    buttonText: 'Go Growth →',
+    stripeLink: STRIPE_LINKS.growth,
   },
 ]
 
@@ -125,26 +147,82 @@ const faqs: FaqItem[] = [
 ]
 
 export default function App() {
+  // Checkout modal
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null)
-  const [checkoutStep, setCheckoutStep] = useState<'details' | 'processing' | 'success'>('details')
+  const [checkoutEmail, setCheckoutEmail] = useState('')
+  const [checkoutLoading, setCheckoutLoading] = useState(false)
+
+  // FAQ
   const [openFaq, setOpenFaq] = useState<number | null>(null)
 
+  // Contact / audit form
+  const [contactName, setContactName] = useState('')
+  const [contactEmail, setContactEmail] = useState('')
+  const [contactMessage, setContactMessage] = useState('')
+  const [contactStatus, setContactStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle')
+
+  const contactRef = useRef<HTMLElement>(null)
+
+  // ── Scroll to contact section ────────────────────────────────────────────
+  const scrollToContact = (e: React.MouseEvent) => {
+    e.preventDefault()
+    contactRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }
+
+  // ── Checkout: redirect to Stripe Payment Link ────────────────────────────
   const handleCheckout = (e: React.FormEvent) => {
     e.preventDefault()
-    setCheckoutStep('processing')
+    if (!selectedPlan) return
+    setCheckoutLoading(true)
+
+    // Append prefilled email to the Stripe Payment Link
+    const url = new URL(selectedPlan.stripeLink)
+    if (checkoutEmail) url.searchParams.set('prefilled_email', checkoutEmail)
+
+    // Small delay for UX, then redirect
     setTimeout(() => {
-      setCheckoutStep('success')
-    }, 2000)
+      window.location.href = url.toString()
+    }, 400)
   }
 
   const resetCheckout = () => {
     setSelectedPlan(null)
-    setCheckoutStep('details')
+    setCheckoutEmail('')
+    setCheckoutLoading(false)
+  }
+
+  // ── Contact form: Formspree submission ───────────────────────────────────
+  const handleContactSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setContactStatus('sending')
+
+    try {
+      const res = await fetch(FORMSPREE_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({
+          name: contactName,
+          email: contactEmail,
+          message: contactMessage,
+        }),
+      })
+
+      if (res.ok) {
+        setContactStatus('success')
+        setContactName('')
+        setContactEmail('')
+        setContactMessage('')
+      } else {
+        setContactStatus('error')
+      }
+    } catch {
+      setContactStatus('error')
+    }
   }
 
   return (
     <div className="min-h-screen bg-[#0B0F19] text-white font-sans overflow-x-hidden">
-      
+
       {/* 1. Sticky Glassmorphic Navigation */}
       <header className="sticky top-0 z-50 bg-[#0B0F19]/80 backdrop-blur-md border-b border-slate-800/60 py-4 px-6">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
@@ -157,18 +235,17 @@ export default function App() {
             <a href="#pricing" className="hover:text-blue-500 transition-colors duration-200">Pricing</a>
             <a href="#faq" className="hover:text-blue-500 transition-colors duration-200">FAQ</a>
           </nav>
-          <a href="#pricing" className="text-xs font-semibold px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white border border-slate-700/50 rounded-lg transition-all">
-            Get Started
+          <a href="#contact" onClick={scrollToContact} className="text-xs font-semibold px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white border border-slate-700/50 rounded-lg transition-all">
+            Book Free Audit
           </a>
         </div>
       </header>
 
-      {/* 2. Dark Hero Section (Above the Fold) */}
+      {/* 2. Dark Hero Section */}
       <section className="relative overflow-hidden bg-[#0B0F19] py-20 lg:py-28 border-b border-slate-800/30">
         <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 via-indigo-500/5 to-transparent pointer-events-none" />
         <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center relative z-10">
-          
-          {/* Left Column */}
+
           <div className="lg:col-span-7 text-left">
             <span className="font-mono text-xs font-semibold text-blue-400 tracking-widest uppercase mb-4 block">
               INTRODUCING LEVERAGEFLOW
@@ -186,7 +263,7 @@ export default function App() {
               <a href="#pricing" className="px-8 py-4 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-semibold rounded-xl text-base shadow-lg shadow-blue-500/20 transition-all duration-300 transform hover:scale-[1.02] text-center">
                 See What We Can Automate →
               </a>
-              <a href="#faq" className="px-8 py-4 bg-slate-900 hover:bg-slate-800 text-slate-300 font-medium border border-slate-800 rounded-xl text-base text-center transition-all">
+              <a href="#contact" onClick={scrollToContact} className="px-8 py-4 bg-slate-900 hover:bg-slate-800 text-slate-300 font-medium border border-slate-800 rounded-xl text-base text-center transition-all">
                 Book Free Audit
               </a>
             </div>
@@ -197,13 +274,12 @@ export default function App() {
             </div>
           </div>
 
-          {/* Right Column (Illustration) */}
           <div className="lg:col-span-5 relative flex items-center justify-center lg:h-full select-none transform hover:scale-[1.01] transition-transform duration-500">
             <div className="relative animate-float-slow">
-              <img 
-                src={heroImg} 
-                className="w-full h-auto object-contain rounded-2xl shadow-2xl border border-slate-800" 
-                alt="Workflow Illustration" 
+              <img
+                src={heroImg}
+                className="w-full h-auto object-contain rounded-2xl shadow-2xl border border-slate-800"
+                alt="Workflow Illustration"
               />
             </div>
           </div>
@@ -227,7 +303,7 @@ export default function App() {
         </div>
       </section>
 
-      {/* 4. Pain Point / Agitator Section */}
+      {/* 4. Pain Point Section */}
       <section className="bg-slate-50 py-20 border-b border-slate-200/50 text-slate-900">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-12">
@@ -240,7 +316,6 @@ export default function App() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {/* Card 1 */}
             <div className="bg-white border border-slate-200/60 p-8 rounded-2xl shadow-sm hover:border-red-300/60 hover:shadow-md transition-all duration-300 relative overflow-hidden group">
               <div className="h-1.5 w-full bg-gradient-to-r from-red-400 to-red-500 absolute top-0 left-0" />
               <span className="text-red-500 font-sans italic text-sm font-semibold mb-4 block">"I need to hire another ops person..."</span>
@@ -249,7 +324,6 @@ export default function App() {
                 Before you know it, you're spending $60k–$80k/year on headcount for manual CRM entries and follow-ups that could easily run itself.
               </p>
             </div>
-            {/* Card 2 */}
             <div className="bg-white border border-slate-200/60 p-8 rounded-2xl shadow-sm hover:border-red-300/60 hover:shadow-md transition-all duration-300 relative overflow-hidden group">
               <div className="h-1.5 w-full bg-gradient-to-r from-red-400 to-red-500 absolute top-0 left-0" />
               <span className="text-red-500 font-sans italic text-sm font-semibold mb-4 block">"We have 14 spreadsheets..."</span>
@@ -258,7 +332,6 @@ export default function App() {
                 Copying and pasting data between tools is inefficient, error-prone, and burns your team's creative hours on administrative tasks.
               </p>
             </div>
-            {/* Card 3 */}
             <div className="bg-white border border-slate-200/60 p-8 rounded-2xl shadow-sm hover:border-red-300/60 hover:shadow-md transition-all duration-300 relative overflow-hidden group">
               <div className="h-1.5 w-full bg-gradient-to-r from-red-400 to-red-500 absolute top-0 left-0" />
               <span className="text-red-500 font-sans italic text-sm font-semibold mb-4 block">"We bought Zapier but..."</span>
@@ -288,7 +361,6 @@ export default function App() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
-            {/* Step 1 */}
             <div className="bg-slate-800/50 border border-slate-800/80 p-8 rounded-2xl relative transition-all hover:bg-slate-800/80 hover:border-slate-700/80 group">
               <span className="text-7xl font-sans font-extrabold text-slate-700/20 absolute top-4 right-6 select-none group-hover:text-blue-500/10 transition-colors">01</span>
               <span className="font-mono text-xs text-blue-400 font-semibold mb-3 tracking-widest block">STEP 01</span>
@@ -300,7 +372,6 @@ export default function App() {
                 Deliverable: Opportunity Report
               </span>
             </div>
-            {/* Step 2 */}
             <div className="bg-slate-800/50 border border-slate-800/80 p-8 rounded-2xl relative transition-all hover:bg-slate-800/80 hover:border-slate-700/80 group">
               <span className="text-7xl font-sans font-extrabold text-slate-700/20 absolute top-4 right-6 select-none group-hover:text-blue-500/10 transition-colors">02</span>
               <span className="font-mono text-xs text-blue-400 font-semibold mb-3 tracking-widest block">STEP 02</span>
@@ -312,7 +383,6 @@ export default function App() {
                 Deliverable: Live Automations
               </span>
             </div>
-            {/* Step 3 */}
             <div className="bg-slate-800/50 border border-slate-800/80 p-8 rounded-2xl relative transition-all hover:bg-slate-800/80 hover:border-slate-700/80 group">
               <span className="text-7xl font-sans font-extrabold text-slate-700/20 absolute top-4 right-6 select-none group-hover:text-blue-500/10 transition-colors">03</span>
               <span className="font-mono text-xs text-blue-400 font-semibold mb-3 tracking-widest block">STEP 03</span>
@@ -341,7 +411,6 @@ export default function App() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {/* Feat 1 */}
             <div className="bg-slate-50 border border-slate-200/50 p-8 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 group hover:-translate-y-1">
               <div className="h-12 w-12 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-600 mb-6 group-hover:bg-blue-600 group-hover:text-white transition-all">
                 <Zap className="w-6 h-6" />
@@ -351,7 +420,6 @@ export default function App() {
                 GPT-4 and Claude powered systems that handle lead qualification, drafting client onboarding, and CRM enrichment.
               </p>
             </div>
-            {/* Feat 2 */}
             <div className="bg-slate-50 border border-slate-200/50 p-8 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 group hover:-translate-y-1">
               <div className="h-12 w-12 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-600 mb-6 group-hover:bg-blue-600 group-hover:text-white transition-all">
                 <Layers className="w-6 h-6" />
@@ -361,7 +429,6 @@ export default function App() {
                 Seamless synchronization of lead lists, project managers, calendar tools, and automated client alerts.
               </p>
             </div>
-            {/* Feat 3 */}
             <div className="bg-slate-50 border border-slate-200/50 p-8 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 group hover:-translate-y-1">
               <div className="h-12 w-12 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-600 mb-6 group-hover:bg-blue-600 group-hover:text-white transition-all">
                 <FileText className="w-6 h-6" />
@@ -371,7 +438,6 @@ export default function App() {
                 Automated pulling of performance metrics delivered automatically to your clients in their brand template.
               </p>
             </div>
-            {/* Feat 4 */}
             <div className="bg-slate-50 border border-slate-200/50 p-8 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 group hover:-translate-y-1">
               <div className="h-12 w-12 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-600 mb-6 group-hover:bg-blue-600 group-hover:text-white transition-all">
                 <MessageSquare className="w-6 h-6" />
@@ -381,7 +447,6 @@ export default function App() {
                 Priority communication in a shared Slack channel. Chat directly with the engineers running your workflows.
               </p>
             </div>
-            {/* Feat 5 */}
             <div className="bg-slate-50 border border-slate-200/50 p-8 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 group hover:-translate-y-1">
               <div className="h-12 w-12 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-600 mb-6 group-hover:bg-blue-600 group-hover:text-white transition-all">
                 <TrendingUp className="w-6 h-6" />
@@ -391,7 +456,6 @@ export default function App() {
                 Month-to-month productized automation plans. Upgrade, scale back, or pause request streams anytime.
               </p>
             </div>
-            {/* Feat 6 */}
             <div className="bg-slate-50 border border-slate-200/50 p-8 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 group hover:-translate-y-1">
               <div className="h-12 w-12 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-600 mb-6 group-hover:bg-blue-600 group-hover:text-white transition-all">
                 <Lock className="w-6 h-6" />
@@ -498,7 +562,7 @@ export default function App() {
         </div>
       </section>
 
-      {/* 9. Dynamic FAQ Accordion Section */}
+      {/* 9. FAQ Accordion Section */}
       <section id="faq" className="bg-slate-50 py-20 border-t border-slate-200/40 text-slate-900">
         <div className="max-w-3xl mx-auto px-6">
           <div className="text-center mb-12">
@@ -515,7 +579,7 @@ export default function App() {
               const isOpen = openFaq === index
               return (
                 <div key={index} className="bg-white border border-slate-200/80 rounded-2xl overflow-hidden transition-all duration-300 hover:border-slate-300 shadow-sm">
-                  <button 
+                  <button
                     onClick={() => setOpenFaq(isOpen ? null : index)}
                     className="w-full px-6 py-5 flex items-center justify-between text-left font-sans font-bold text-base text-slate-900 hover:text-blue-500 transition-colors focus:outline-none"
                   >
@@ -543,8 +607,99 @@ export default function App() {
         </div>
       </section>
 
-      {/* 10. High-Contrast Final CTA Section */}
-      <section className="relative overflow-hidden bg-[#0B0F19] py-20 border-t border-slate-800/50 text-center">
+      {/* 10. Contact / Book Free Audit Section */}
+      <section
+        id="contact"
+        ref={contactRef}
+        className="bg-[#0B0F19] py-20 border-t border-slate-800/50"
+      >
+        <div className="max-w-2xl mx-auto px-6">
+          <div className="text-center mb-10">
+            <span className="font-mono text-xs text-blue-400 uppercase tracking-widest font-semibold mb-2 block">
+              BOOK YOUR FREE AUDIT
+            </span>
+            <h2 className="text-3xl md:text-4xl font-sans font-extrabold text-white tracking-tight mb-3">
+              Let's Find Your Hidden ROI
+            </h2>
+            <p className="text-slate-400 text-base max-w-lg mx-auto">
+              Tell us a bit about your business. We'll reach out within 24 hours to schedule your free 20-minute automation audit.
+            </p>
+          </div>
+
+          {contactStatus === 'success' ? (
+            <div className="text-center py-12">
+              <CheckCircle2 className="w-16 h-16 text-emerald-400 mx-auto mb-4" />
+              <h3 className="text-2xl font-bold text-white mb-2">You're on the list!</h3>
+              <p className="text-slate-400">We'll be in touch within 24 hours to schedule your audit.</p>
+            </div>
+          ) : (
+            <form onSubmit={handleContactSubmit} className="space-y-5">
+              <div>
+                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Your Name</label>
+                <input
+                  required
+                  type="text"
+                  value={contactName}
+                  onChange={e => setContactName(e.target.value)}
+                  placeholder="Jane Smith"
+                  className="w-full px-4 py-3 rounded-xl bg-slate-800/60 border border-slate-700/60 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500/60 transition-all"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Work Email</label>
+                <input
+                  required
+                  type="email"
+                  value={contactEmail}
+                  onChange={e => setContactEmail(e.target.value)}
+                  placeholder="jane@youragency.com"
+                  className="w-full px-4 py-3 rounded-xl bg-slate-800/60 border border-slate-700/60 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500/60 transition-all"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">What do you want to automate?</label>
+                <textarea
+                  required
+                  rows={4}
+                  value={contactMessage}
+                  onChange={e => setContactMessage(e.target.value)}
+                  placeholder="e.g. Lead follow-up in HubSpot, client onboarding, weekly reporting..."
+                  className="w-full px-4 py-3 rounded-xl bg-slate-800/60 border border-slate-700/60 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500/60 transition-all resize-none"
+                />
+              </div>
+
+              {contactStatus === 'error' && (
+                <p className="text-red-400 text-sm">Something went wrong. Please email us directly at hello@leverage-flow.com</p>
+              )}
+
+              <button
+                type="submit"
+                disabled={contactStatus === 'sending'}
+                className="w-full py-4 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-blue-500/20 transition-all flex items-center justify-center gap-2 disabled:opacity-60"
+              >
+                {contactStatus === 'sending' ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-4 h-4" />
+                    Book My Free Audit
+                  </>
+                )}
+              </button>
+
+              <p className="text-center text-xs text-slate-500 font-mono">
+                No spam. No sales call unless you want one. Just a real audit.
+              </p>
+            </form>
+          )}
+        </div>
+      </section>
+
+      {/* 11. High-Contrast Final CTA Section */}
+      <section className="relative overflow-hidden bg-slate-900 py-20 border-t border-slate-800/50 text-center">
         <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-indigo-500/10 to-transparent pointer-events-none" />
         <div className="max-w-4xl mx-auto px-6 relative z-10">
           <h2 className="text-3xl md:text-5xl font-sans font-extrabold text-white tracking-tight leading-tight mb-4">
@@ -554,11 +709,11 @@ export default function App() {
             Book a free 20-minute automation audit. We'll identify $5,000+ in monthly time savings — or it's on us.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <a href="#pricing" className="px-8 py-4 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-bold rounded-xl text-base shadow-lg shadow-blue-500/25 transition-all transform hover:scale-[1.02]">
+            <a href="#contact" onClick={scrollToContact} className="px-8 py-4 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-bold rounded-xl text-base shadow-lg shadow-blue-500/25 transition-all transform hover:scale-[1.02]">
               Book Your Free Audit →
             </a>
-            <a href="#pricing" className="px-8 py-4 bg-slate-900/80 hover:bg-slate-800 text-slate-300 font-semibold border border-slate-800 rounded-xl text-base transition-all">
-              See Example Workflows →
+            <a href="#pricing" className="px-8 py-4 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold border border-slate-700 rounded-xl text-base transition-all">
+              See Pricing →
             </a>
           </div>
           <div className="flex flex-wrap justify-center items-center gap-6 mt-8 text-xs text-slate-500 font-mono">
@@ -569,7 +724,7 @@ export default function App() {
         </div>
       </section>
 
-      {/* 11. Footer Section */}
+      {/* 12. Footer */}
       <footer className="bg-[#0B0F19] border-t border-slate-900/80 text-slate-400">
         <div className="max-w-7xl mx-auto px-6 py-12 grid grid-cols-1 md:grid-cols-4 gap-8">
           <div>
@@ -585,16 +740,17 @@ export default function App() {
           <div>
             <h4 className="text-white font-bold text-xs uppercase tracking-wider mb-4">Quick Links</h4>
             <ul className="space-y-2 text-xs">
-              <li><a href="#how-it-works" className="hover:text-blue-500">How It Works</a></li>
-              <li><a href="#pricing" className="hover:text-blue-500">Pricing</a></li>
-              <li><a href="#faq" className="hover:text-blue-500">FAQ</a></li>
+              <li><a href="#how-it-works" className="hover:text-blue-500 transition-colors">How It Works</a></li>
+              <li><a href="#pricing" className="hover:text-blue-500 transition-colors">Pricing</a></li>
+              <li><a href="#faq" className="hover:text-blue-500 transition-colors">FAQ</a></li>
+              <li><a href="#contact" onClick={scrollToContact} className="hover:text-blue-500 transition-colors">Book Free Audit</a></li>
             </ul>
           </div>
           <div>
             <h4 className="text-white font-bold text-xs uppercase tracking-wider mb-4">Contact</h4>
             <ul className="space-y-2 text-xs">
-              <li>hello@leverage-flow.com</li>
-              <li><a href="#" className="hover:text-blue-500">Slack Community</a></li>
+              <li><a href="mailto:hello@leverage-flow.com" className="hover:text-blue-500 transition-colors">hello@leverage-flow.com</a></li>
+              <li><a href="#contact" onClick={scrollToContact} className="hover:text-blue-500 transition-colors">Book Free Audit</a></li>
             </ul>
           </div>
           <div>
@@ -608,7 +764,7 @@ export default function App() {
         </div>
       </footer>
 
-      {/* Simulated Checkout Modal */}
+      {/* Checkout Modal → redirects to Stripe Payment Link */}
       <AnimatePresence>
         {selectedPlan && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -619,122 +775,84 @@ export default function App() {
               onClick={resetCheckout}
               className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
             />
-            
+
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               className="relative bg-white text-slate-900 w-full max-w-md rounded-3xl shadow-2xl overflow-hidden"
             >
-              <button 
+              <button
                 onClick={resetCheckout}
                 className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors z-10"
               >
                 <X className="w-5 h-5" />
               </button>
 
-              {checkoutStep === 'details' && (
-                <div className="p-8">
-                  <div className="flex items-center space-x-2 mb-6">
-                    <div className="bg-indigo-600/10 p-2 rounded-lg text-indigo-600">
-                      <CreditCard className="w-5 h-5" />
-                    </div>
-                    <h3 className="text-xl font-bold">Secure Checkout</h3>
+              <div className="p-8">
+                <div className="flex items-center space-x-2 mb-6">
+                  <div className="bg-indigo-600/10 p-2 rounded-lg text-indigo-600">
+                    <ShieldCheck className="w-5 h-5" />
                   </div>
-
-                  <div className="bg-slate-50 p-4 rounded-xl mb-6 border border-slate-100">
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="text-sm font-semibold text-slate-600">{selectedPlan.name}</span>
-                      <span className="font-bold">{selectedPlan.price}</span>
-                    </div>
-                    <p className="text-xs text-slate-500">Billed monthly. Pause or cancel anytime.</p>
-                  </div>
-
-                  <form onSubmit={handleCheckout} className="space-y-4">
-                    <div>
-                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Email Address</label>
-                      <input 
-                        required 
-                        type="email" 
-                        placeholder="john@example.com"
-                        className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Card Details</label>
-                      <div className="relative">
-                        <input 
-                          required 
-                          type="text" 
-                          placeholder="4242 4242 4242 4242"
-                          className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all pr-12"
-                        />
-                        <div className="absolute right-4 top-1/2 -translate-y-1/2 flex space-x-1">
-                          <div className="w-6 h-4 bg-slate-200 rounded-sm" />
-                          <div className="w-6 h-4 bg-slate-300 rounded-sm" />
-                        </div>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <input 
-                          required 
-                          type="text" 
-                          placeholder="MM / YY"
-                          className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
-                        />
-                      </div>
-                      <div>
-                        <input 
-                          required 
-                          type="text" 
-                          placeholder="CVC"
-                          className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
-                        />
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center space-x-2 py-2">
-                      <ShieldCheck className="w-4 h-4 text-green-500" />
-                      <span className="text-[10px] text-slate-400 font-medium uppercase tracking-widest">Secure 256-bit encrypted payment</span>
-                    </div>
-
-                    <button
-                      type="submit"
-                      className="w-full bg-indigo-600 text-white py-4 rounded-xl font-bold hover:bg-indigo-700 shadow-lg shadow-indigo-200 transition-all flex items-center justify-center space-x-2"
-                    >
-                      <span>Pay {selectedPlan.price}</span>
-                      <ArrowRight className="w-4 h-4" />
-                    </button>
-                  </form>
+                  <h3 className="text-xl font-bold">Get Started with {selectedPlan.name}</h3>
                 </div>
-              )}
 
-              {checkoutStep === 'processing' && (
-                <div className="p-12 text-center">
-                  <div className="flex justify-center mb-6">
-                    <Loader2 className="w-12 h-12 text-indigo-600 animate-spin" />
+                <div className="bg-slate-50 p-4 rounded-xl mb-6 border border-slate-100">
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-sm font-semibold text-slate-600">{selectedPlan.name}</span>
+                    <span className="font-bold">{selectedPlan.price}<span className="text-slate-400 font-normal text-xs">/mo</span></span>
                   </div>
-                  <h3 className="text-xl font-bold mb-2">Processing Payment</h3>
-                  <p className="text-slate-500">Please don't close this window...</p>
+                  <p className="text-xs text-slate-500">Billed monthly via Stripe. Pause or cancel anytime.</p>
                 </div>
-              )}
 
-              {checkoutStep === 'success' && (
-                <div className="p-12 text-center">
-                  <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <Check className="w-10 h-10" />
+                <form onSubmit={handleCheckout} className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                      Your Work Email
+                    </label>
+                    <input
+                      required
+                      type="email"
+                      value={checkoutEmail}
+                      onChange={e => setCheckoutEmail(e.target.value)}
+                      placeholder="jane@youragency.com"
+                      className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                    />
+                    <p className="text-xs text-slate-400 mt-1.5">We'll pre-fill this on the Stripe checkout page.</p>
                   </div>
-                  <h3 className="text-2xl font-bold mb-2">Subscription Confirmed!</h3>
-                  <p className="text-slate-500 mb-8">Welcome to LeverageFlow. You'll receive an onboarding email in the next few minutes.</p>
+
+                  <div className="flex items-center space-x-2 py-2">
+                    <ShieldCheck className="w-4 h-4 text-green-500 shrink-0" />
+                    <span className="text-[10px] text-slate-400 font-medium uppercase tracking-widest">Secure payment powered by Stripe</span>
+                  </div>
+
                   <button
-                    onClick={resetCheckout}
-                    className="w-full bg-slate-900 text-white py-4 rounded-xl font-bold hover:bg-slate-800 transition-all"
+                    type="submit"
+                    disabled={checkoutLoading}
+                    className="w-full bg-indigo-600 text-white py-4 rounded-xl font-bold hover:bg-indigo-700 shadow-lg shadow-indigo-200 transition-all flex items-center justify-center space-x-2 disabled:opacity-60"
                   >
-                    Go to Dashboard
+                    {checkoutLoading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Redirecting to Stripe...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>Continue to Secure Payment →</span>
+                        <ArrowRight className="w-4 h-4" />
+                      </>
+                    )}
                   </button>
-                </div>
-              )}
+
+                  <button
+                    type="button"
+                    onClick={resetCheckout}
+                    className="w-full text-slate-400 text-sm py-2 hover:text-slate-600 transition-colors"
+                  >
+                    ← Back
+                  </button>
+                </form>
+              </div>
             </motion.div>
           </div>
         )}
