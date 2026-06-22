@@ -593,7 +593,7 @@ export default function App() {
           <div>
             <h4 className="text-white font-bold text-xs uppercase tracking-wider mb-4">Contact</h4>
             <ul className="space-y-2 text-xs">
-              <li>hello@leverageflowai.com</li>
+              <li>hello@leverage-flow.com</li>
               <li><a href="#" className="hover:text-blue-500">Slack Community</a></li>
             </ul>
           </div>
