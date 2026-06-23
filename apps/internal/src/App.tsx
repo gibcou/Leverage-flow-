@@ -159,6 +159,7 @@ export default function App() {
   const [showNewLeadForm, setShowNewLeadForm] = useState(false)
   const [showNewRequestForm, setShowNewRequestForm] = useState(false)
   const [noteInput, setNoteInput] = useState('')
+  const [leadTab, setLeadTab] = useState<'leads' | 'details'>('leads')
 
   const unreadCount = notifications.filter(n => !n.read).length
 
@@ -298,7 +299,7 @@ export default function App() {
                   {leads.slice(0, 4).map(lead => (
                     <button
                       key={lead.id}
-                      onClick={() => { setSelectedLead(lead); setView('leads') }}
+                      onClick={() => { setSelectedLead(lead); setView('leads'); setLeadTab('details') }}
                       className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-slate-800 transition-all text-left"
                     >
                       <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-xs font-bold text-slate-300 shrink-0">
@@ -351,60 +352,99 @@ export default function App() {
 
         {/* ══ LEADS ══════════════════════════════════════════════════════ */}
         {view === 'leads' && (
-          <div className="flex h-full">
-            {/* Lead list */}
-            <div className="w-80 border-r border-slate-800 flex flex-col">
-              <div className="p-4 border-b border-slate-800">
-                <div className="flex items-center justify-between mb-3">
-                  <h2 className="font-bold text-white">Lead Pipeline</h2>
-                  <button onClick={() => setShowNewLeadForm(true)} className="w-7 h-7 bg-blue-600 hover:bg-blue-700 rounded-lg flex items-center justify-center transition-colors">
-                    <Plus className="w-4 h-4" />
-                  </button>
-                </div>
-                <div className="relative mb-2">
-                  <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500" />
-                  <input
-                    value={leadSearch}
-                    onChange={e => setLeadSearch(e.target.value)}
-                    placeholder="Search leads..."
-                    className="w-full pl-8 pr-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
-                  />
-                </div>
-                <select
-                  value={leadStageFilter}
-                  onChange={e => setLeadStageFilter(e.target.value as LeadStage | 'all')}
-                  className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-sm text-slate-300 focus:outline-none focus:border-blue-500"
-                >
-                  <option value="all">All Stages</option>
-                  {(Object.keys(STAGE_META) as LeadStage[]).map(s => (
-                    <option key={s} value={s}>{STAGE_META[s].label}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="flex-1 overflow-auto p-2 space-y-1">
-                {filteredLeads.map(lead => (
-                  <button
-                    key={lead.id}
-                    onClick={() => setSelectedLead(lead)}
-                    className={`w-full text-left p-3 rounded-xl transition-all ${
-                      selectedLead?.id === lead.id ? 'bg-blue-600/20 border border-blue-500/30' : 'hover:bg-slate-800 border border-transparent'
-                    }`}
-                  >
-                    <div className="flex items-start justify-between gap-2 mb-1">
-                      <span className="text-sm font-medium text-white truncate">{lead.name}</span>
-                      <Badge className={`${STAGE_META[lead.stage].bg} ${STAGE_META[lead.stage].color} border shrink-0 text-[10px]`}>
-                        {STAGE_META[lead.stage].label}
-                      </Badge>
-                    </div>
-                    <div className="text-xs text-slate-500">{lead.company}</div>
-                    <div className="text-xs text-emerald-400 font-semibold mt-1">${lead.value.toLocaleString()}/mo</div>
-                  </button>
-                ))}
-              </div>
+          <div className="flex flex-col h-full">
+            {/* Tab bar */}
+            <div className="flex items-center gap-1 px-6 pt-5 pb-0 border-b border-slate-800 shrink-0">
+              <button
+                onClick={() => setLeadTab('leads')}
+                className={`px-4 py-2.5 text-sm font-semibold rounded-t-lg border-b-2 transition-all ${
+                  leadTab === 'leads'
+                    ? 'text-blue-400 border-blue-500 bg-blue-500/5'
+                    : 'text-slate-500 border-transparent hover:text-slate-300'
+                }`}
+              >
+                <span className="flex items-center gap-2">
+                  <Users className="w-3.5 h-3.5" />
+                  Leads
+                  <span className="bg-slate-700 text-slate-300 text-[10px] font-bold px-1.5 py-0.5 rounded-full">{filteredLeads.length}</span>
+                </span>
+              </button>
+              <button
+                onClick={() => setLeadTab('details')}
+                className={`px-4 py-2.5 text-sm font-semibold rounded-t-lg border-b-2 transition-all ${
+                  leadTab === 'details'
+                    ? 'text-blue-400 border-blue-500 bg-blue-500/5'
+                    : 'text-slate-500 border-transparent hover:text-slate-300'
+                }`}
+              >
+                <span className="flex items-center gap-2">
+                  <ClipboardList className="w-3.5 h-3.5" />
+                  Details
+                  {selectedLead && <span className="bg-blue-600/30 text-blue-400 text-[10px] font-bold px-1.5 py-0.5 rounded-full">1</span>}
+                </span>
+              </button>
+              <div className="flex-1" />
+              <button onClick={() => setShowNewLeadForm(true)} className="mb-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 rounded-lg flex items-center gap-1.5 text-xs font-semibold transition-colors">
+                <Plus className="w-3.5 h-3.5" /> Add Lead
+              </button>
             </div>
 
-            {/* Lead detail */}
-            <div className="flex-1 overflow-auto p-8">
+            {/* Leads tab */}
+            {leadTab === 'leads' && (
+              <div className="flex flex-col flex-1 overflow-hidden">
+                <div className="p-4 border-b border-slate-800 shrink-0">
+                  <div className="flex gap-2">
+                    <div className="relative flex-1">
+                      <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500" />
+                      <input
+                        value={leadSearch}
+                        onChange={e => setLeadSearch(e.target.value)}
+                        placeholder="Search leads..."
+                        className="w-full pl-8 pr-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+                      />
+                    </div>
+                    <select
+                      value={leadStageFilter}
+                      onChange={e => setLeadStageFilter(e.target.value as LeadStage | 'all')}
+                      className="px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-sm text-slate-300 focus:outline-none focus:border-blue-500"
+                    >
+                      <option value="all">All Stages</option>
+                      {(Object.keys(STAGE_META) as LeadStage[]).map(s => (
+                        <option key={s} value={s}>{STAGE_META[s].label}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                <div className="flex-1 overflow-auto p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 content-start">
+                  {filteredLeads.map(lead => (
+                    <button
+                      key={lead.id}
+                      onClick={() => { setSelectedLead(lead); setLeadTab('details') }}
+                      className={`text-left p-4 rounded-2xl border transition-all hover:scale-[1.01] ${
+                        selectedLead?.id === lead.id ? 'bg-blue-600/10 border-blue-500/40' : 'bg-slate-900 border-slate-800 hover:border-slate-600'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-xs font-bold text-slate-300 shrink-0">
+                          {lead.name.split(' ').map(n => n[0]).join('')}
+                        </div>
+                        <Badge className={`${STAGE_META[lead.stage].bg} ${STAGE_META[lead.stage].color} border text-[10px]`}>
+                          {STAGE_META[lead.stage].label}
+                        </Badge>
+                      </div>
+                      <div className="text-sm font-semibold text-white mb-0.5">{lead.name}</div>
+                      <div className="text-xs text-slate-500 mb-2">{lead.company}</div>
+                      <div className="text-sm font-bold text-emerald-400">${lead.value.toLocaleString()}/mo</div>
+                      <div className="text-[10px] text-slate-600 mt-1">{lead.createdAt}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Details tab */}
+            {leadTab === 'details' && (
+              <div className="flex-1 overflow-auto p-8">
               {selectedLead ? (
                 <div>
                   <div className="flex items-start justify-between mb-6">
@@ -505,11 +545,18 @@ export default function App() {
                 <div className="h-full flex items-center justify-center text-slate-600">
                   <div className="text-center">
                     <Users className="w-12 h-12 mx-auto mb-3 opacity-20" />
-                    <p className="text-sm">Select a lead to view details</p>
+                    <p className="text-sm">Select a lead from the Leads tab to view details</p>
+                    <button
+                      onClick={() => setLeadTab('leads')}
+                      className="mt-3 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium rounded-lg transition-colors"
+                    >
+                      ← Back to Leads
+                    </button>
                   </div>
                 </div>
               )}
             </div>
+            )}
           </div>
         )}
 
