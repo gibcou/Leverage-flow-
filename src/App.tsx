@@ -34,7 +34,7 @@ const STRIPE_LINKS = {
 // Go to https://formspree.io → Create free account → New Form → copy the endpoint
 // It looks like: https://formspree.io/f/xabcdefg
 // Submissions will arrive at gibcoutley@gmail.com
-const FORMSPREE_ENDPOINT = 'https://formspree.io/f/REPLACE_WITH_YOUR_FORM_ID'
+const FORMSPREE_ENDPOINT = 'https://formspree.io/f/xwvdpywp'
 
 interface Plan {
   id: string
