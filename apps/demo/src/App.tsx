@@ -232,7 +232,8 @@ const INDUSTRY_META = {
 export default function App() {
   const [industry, setIndustry] = useState<Industry>('marketing')
   const [running, setRunning] = useState(false)
-  const [tab, setTab] = useState<'feed' | 'data'>('feed')
+  const [tab, setTab] = useState<'pipeline' | 'details'>('pipeline')
+  const [selectedItem, setSelectedItem] = useState<DemoLead | DemoCandidate | DemoProject | null>(null)
 
   const meta = INDUSTRY_META[industry]
   const events = industry === 'marketing' ? MARKETING_EVENTS : industry === 'recruiting' ? RECRUITING_EVENTS : CONSULTING_EVENTS
@@ -240,7 +241,8 @@ export default function App() {
   const handleIndustryChange = (ind: Industry) => {
     setIndustry(ind)
     setRunning(false)
-    setTab('feed')
+    setTab('pipeline')
+    setSelectedItem(null)
   }
 
   // Stats per industry
@@ -366,95 +368,268 @@ export default function App() {
               <h2 className="text-sm font-bold text-white">
                 {industry === 'marketing' ? 'Lead Pipeline' : industry === 'recruiting' ? 'Candidate Tracker' : 'Project Dashboard'}
               </h2>
-              <div className="flex gap-1">
-                {(['feed', 'data'] as const).map(t => (
-                  <button key={t} onClick={() => setTab(t)} className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${tab === t ? 'bg-slate-700 text-white' : 'text-slate-500 hover:text-white'}`}>
-                    {t === 'feed' ? 'Pipeline' : 'Details'}
-                  </button>
-                ))}
+                <div className="flex gap-1">
+                <button
+                  onClick={() => setTab('pipeline')}
+                  className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${tab === 'pipeline' ? 'bg-slate-700 text-white' : 'text-slate-500 hover:text-white'}`}
+                >
+                  Pipeline
+                </button>
+                <button
+                  onClick={() => setTab('details')}
+                  className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1 ${tab === 'details' ? 'bg-slate-700 text-white' : 'text-slate-500 hover:text-white'}`}
+                >
+                  Details
+                  {selectedItem && <span className="w-1.5 h-1.5 rounded-full bg-blue-400 inline-block" />}
+                </button>
               </div>
             </div>
 
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
-              <div className="p-3 border-b border-slate-800">
-                <PipelineBar
-                  industry={industry}
-                  items={industry === 'marketing' ? MARKETING_LEADS : industry === 'recruiting' ? RECRUITING_CANDIDATES : CONSULTING_PROJECTS}
-                />
-              </div>
+            {/* ── PIPELINE TAB ── */}
+            {tab === 'pipeline' && (
+              <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
+                <div className="p-3 border-b border-slate-800">
+                  <PipelineBar
+                    industry={industry}
+                    items={industry === 'marketing' ? MARKETING_LEADS : industry === 'recruiting' ? RECRUITING_CANDIDATES : CONSULTING_PROJECTS}
+                  />
+                </div>
+                <div className="divide-y divide-slate-800">
+                  {/* ── Marketing Leads ── */}
+                  {industry === 'marketing' && MARKETING_LEADS.map(lead => (
+                    <button
+                      key={lead.id}
+                      onClick={() => { setSelectedItem(lead); setTab('details') }}
+                      className="w-full text-left p-4 flex items-start gap-3 hover:bg-slate-800/60 transition-all"
+                    >
+                      <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-xs font-bold text-slate-300 shrink-0">
+                        {lead.name.split(' ').map(n => n[0]).join('')}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-0.5">
+                          <span className="text-sm font-semibold text-white">{lead.name}</span>
+                          <span className={`text-xs font-bold ${SCORE_COLOR(lead.score)}`}>Score: {lead.score}</span>
+                        </div>
+                        <div className="text-xs text-slate-500">{lead.company} · via {lead.source}</div>
+                        <div className="flex items-center gap-3 mt-1.5">
+                          <span className="flex items-center gap-1 text-[10px] text-emerald-400">
+                            <CheckCircle2 className="w-3 h-3" /> Auto-contacted in {lead.responseTime}
+                          </span>
+                          <span className="text-[10px] font-mono text-slate-600 capitalize">{lead.status}</span>
+                        </div>
+                      </div>
+                      <ChevronRight className="w-3.5 h-3.5 text-slate-600 shrink-0 mt-1" />
+                    </button>
+                  ))}
 
-              <div className="divide-y divide-slate-800">
-                {/* ── Marketing Leads ── */}
-                {industry === 'marketing' && MARKETING_LEADS.map(lead => (
-                  <div key={lead.id} className="p-4 flex items-start gap-3 hover:bg-slate-800/40 transition-all">
-                    <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-xs font-bold text-slate-300 shrink-0">
-                      {lead.name.split(' ').map(n => n[0]).join('')}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-0.5">
-                        <span className="text-sm font-semibold text-white">{lead.name}</span>
-                        <span className={`text-xs font-bold ${SCORE_COLOR(lead.score)}`}>Score: {lead.score}</span>
+                  {/* ── Recruiting Candidates ── */}
+                  {industry === 'recruiting' && RECRUITING_CANDIDATES.map(cand => (
+                    <button
+                      key={cand.id}
+                      onClick={() => { setSelectedItem(cand); setTab('details') }}
+                      className="w-full text-left p-4 flex items-start gap-3 hover:bg-slate-800/60 transition-all"
+                    >
+                      <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-xs font-bold text-slate-300 shrink-0">
+                        {cand.name.split(' ').map(n => n[0]).join('')}
                       </div>
-                      <div className="text-xs text-slate-500">{lead.company} · via {lead.source}</div>
-                      <div className="flex items-center gap-3 mt-1.5">
-                        <span className="flex items-center gap-1 text-[10px] text-emerald-400">
-                          <CheckCircle2 className="w-3 h-3" /> Auto-contacted in {lead.responseTime}
-                        </span>
-                        <span className="text-[10px] font-mono text-slate-600 capitalize">{lead.status}</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-0.5">
+                          <span className="text-sm font-semibold text-white">{cand.name}</span>
+                          <span className={`text-xs font-bold ${SCORE_COLOR(cand.score)}`}>{cand.score}% match</span>
+                        </div>
+                        <div className="text-xs text-slate-500">{cand.role}</div>
+                        <div className="flex flex-wrap gap-1 mt-1.5">
+                          {cand.skills.map(s => (
+                            <span key={s} className="text-[10px] px-1.5 py-0.5 bg-slate-800 border border-slate-700 rounded text-slate-400">{s}</span>
+                          ))}
+                          {cand.outreachSent && <span className="text-[10px] px-1.5 py-0.5 bg-emerald-500/10 border border-emerald-500/20 rounded text-emerald-400">✓ Outreach sent</span>}
+                          {cand.interviewScheduled && <span className="text-[10px] px-1.5 py-0.5 bg-blue-500/10 border border-blue-500/20 rounded text-blue-400">✓ Interview booked</span>}
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                ))}
+                      <ChevronRight className="w-3.5 h-3.5 text-slate-600 shrink-0 mt-1" />
+                    </button>
+                  ))}
 
-                {/* ── Recruiting Candidates ── */}
-                {industry === 'recruiting' && RECRUITING_CANDIDATES.map(cand => (
-                  <div key={cand.id} className="p-4 flex items-start gap-3 hover:bg-slate-800/40 transition-all">
-                    <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-xs font-bold text-slate-300 shrink-0">
-                      {cand.name.split(' ').map(n => n[0]).join('')}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-0.5">
-                        <span className="text-sm font-semibold text-white">{cand.name}</span>
-                        <span className={`text-xs font-bold ${SCORE_COLOR(cand.score)}`}>{cand.score}% match</span>
+                  {/* ── Consulting Projects ── */}
+                  {industry === 'consulting' && CONSULTING_PROJECTS.map(proj => (
+                    <button
+                      key={proj.id}
+                      onClick={() => { setSelectedItem(proj); setTab('details') }}
+                      className="w-full text-left p-4 hover:bg-slate-800/60 transition-all"
+                    >
+                      <div className="flex items-start justify-between mb-2">
+                        <div>
+                          <span className="text-sm font-semibold text-white">{proj.client}</span>
+                          <div className="text-xs text-slate-500 capitalize mt-0.5">{proj.status}</div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${HEALTH_BADGE[proj.health].cls}`}>
+                            {HEALTH_BADGE[proj.health].label}
+                          </span>
+                          <ChevronRight className="w-3.5 h-3.5 text-slate-600" />
+                        </div>
                       </div>
-                      <div className="text-xs text-slate-500">{cand.role}</div>
-                      <div className="flex flex-wrap gap-1 mt-1.5">
-                        {cand.skills.map(s => (
-                          <span key={s} className="text-[10px] px-1.5 py-0.5 bg-slate-800 border border-slate-700 rounded text-slate-400">{s}</span>
+                      <div className="flex flex-wrap gap-1">
+                        {proj.automations.map(a => (
+                          <span key={a} className="text-[10px] px-1.5 py-0.5 bg-slate-800 border border-slate-700 rounded text-slate-400">⚡ {a}</span>
                         ))}
-                        {cand.outreachSent && <span className="text-[10px] px-1.5 py-0.5 bg-emerald-500/10 border border-emerald-500/20 rounded text-emerald-400">✓ Outreach sent</span>}
-                        {cand.interviewScheduled && <span className="text-[10px] px-1.5 py-0.5 bg-blue-500/10 border border-blue-500/20 rounded text-blue-400">✓ Interview booked</span>}
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded border ${
+                          proj.invoiceStatus === 'paid' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-yellow-500/10 border-yellow-500/20 text-yellow-400'
+                        }`}>
+                          Invoice: {proj.invoiceStatus}
+                        </span>
                       </div>
-                    </div>
-                  </div>
-                ))}
-
-                {/* ── Consulting Projects ── */}
-                {industry === 'consulting' && CONSULTING_PROJECTS.map(proj => (
-                  <div key={proj.id} className="p-4 hover:bg-slate-800/40 transition-all">
-                    <div className="flex items-start justify-between mb-2">
-                      <div>
-                        <span className="text-sm font-semibold text-white">{proj.client}</span>
-                        <div className="text-xs text-slate-500 capitalize mt-0.5">{proj.status}</div>
-                      </div>
-                      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${HEALTH_BADGE[proj.health].cls}`}>
-                        {HEALTH_BADGE[proj.health].label}
-                      </span>
-                    </div>
-                    <div className="flex flex-wrap gap-1">
-                      {proj.automations.map(a => (
-                        <span key={a} className="text-[10px] px-1.5 py-0.5 bg-slate-800 border border-slate-700 rounded text-slate-400">⚡ {a}</span>
-                      ))}
-                      <span className={`text-[10px] px-1.5 py-0.5 rounded border ${
-                        proj.invoiceStatus === 'paid' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-yellow-500/10 border-yellow-500/20 text-yellow-400'
-                      }`}>
-                        Invoice: {proj.invoiceStatus}
-                      </span>
-                    </div>
-                  </div>
-                ))}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
+
+            {/* ── DETAILS TAB ── */}
+            {tab === 'details' && (
+              <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden min-h-[340px]">
+                {selectedItem ? (
+                  <div className="p-6">
+                    <button
+                      onClick={() => setTab('pipeline')}
+                      className="flex items-center gap-1 text-xs text-slate-500 hover:text-slate-300 mb-5 transition-colors"
+                    >
+                      ← Back to Pipeline
+                    </button>
+
+                    {/* Marketing lead detail */}
+                    {'email' in selectedItem && 'score' in selectedItem && 'source' in selectedItem && (
+                      <div>
+                        <div className="flex items-center gap-3 mb-5">
+                          <div className="w-12 h-12 rounded-full bg-slate-700 flex items-center justify-center text-sm font-bold text-slate-300">
+                            {(selectedItem as DemoLead).name.split(' ').map(n => n[0]).join('')}
+                          </div>
+                          <div>
+                            <div className="font-bold text-white text-lg">{(selectedItem as DemoLead).name}</div>
+                            <div className="text-sm text-slate-400">{(selectedItem as DemoLead).company}</div>
+                          </div>
+                          <span className={`ml-auto text-xl font-extrabold ${SCORE_COLOR((selectedItem as DemoLead).score)}`}>
+                            {(selectedItem as DemoLead).score}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3 mb-4">
+                          <div className="bg-slate-800 rounded-xl p-3">
+                            <div className="text-[10px] text-slate-500 mb-1">Email</div>
+                            <div className="text-xs text-white font-mono">{(selectedItem as DemoLead).email}</div>
+                          </div>
+                          <div className="bg-slate-800 rounded-xl p-3">
+                            <div className="text-[10px] text-slate-500 mb-1">Lead Source</div>
+                            <div className="text-xs text-white">{(selectedItem as DemoLead).source}</div>
+                          </div>
+                          <div className="bg-slate-800 rounded-xl p-3">
+                            <div className="text-[10px] text-slate-500 mb-1">Stage</div>
+                            <div className="text-xs text-white capitalize">{(selectedItem as DemoLead).status}</div>
+                          </div>
+                          <div className="bg-slate-800 rounded-xl p-3">
+                            <div className="text-[10px] text-slate-500 mb-1">Response Time</div>
+                            <div className="text-xs text-emerald-400 font-semibold">{(selectedItem as DemoLead).responseTime}</div>
+                          </div>
+                        </div>
+                        <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-3">
+                          <div className="text-[10px] text-emerald-400 font-semibold mb-1">⚡ Automations Triggered</div>
+                          <ul className="text-xs text-slate-400 space-y-1">
+                            <li>✓ Lead scored by AI agent</li>
+                            <li>✓ Personalised email sent automatically</li>
+                            <li>✓ CRM record created &amp; tagged</li>
+                            <li>✓ Sales team notified via Slack</li>
+                          </ul>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Recruiting candidate detail */}
+                    {'role' in selectedItem && 'skills' in selectedItem && (
+                      <div>
+                        <div className="flex items-center gap-3 mb-5">
+                          <div className="w-12 h-12 rounded-full bg-slate-700 flex items-center justify-center text-sm font-bold text-slate-300">
+                            {(selectedItem as DemoCandidate).name.split(' ').map(n => n[0]).join('')}
+                          </div>
+                          <div>
+                            <div className="font-bold text-white text-lg">{(selectedItem as DemoCandidate).name}</div>
+                            <div className="text-sm text-slate-400">{(selectedItem as DemoCandidate).role}</div>
+                          </div>
+                          <span className={`ml-auto text-xl font-extrabold ${SCORE_COLOR((selectedItem as DemoCandidate).score)}`}>
+                            {(selectedItem as DemoCandidate).score}%
+                          </span>
+                        </div>
+                        <div className="mb-4">
+                          <div className="text-[10px] text-slate-500 mb-2">Skills</div>
+                          <div className="flex flex-wrap gap-1.5">
+                            {(selectedItem as DemoCandidate).skills.map(s => (
+                              <span key={s} className="text-xs px-2 py-1 bg-slate-800 border border-slate-700 rounded-lg text-slate-300">{s}</span>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3 mb-4">
+                          <div className="bg-slate-800 rounded-xl p-3">
+                            <div className="text-[10px] text-slate-500 mb-1">Stage</div>
+                            <div className="text-xs text-white capitalize">{(selectedItem as DemoCandidate).status}</div>
+                          </div>
+                          <div className="bg-slate-800 rounded-xl p-3">
+                            <div className="text-[10px] text-slate-500 mb-1">Match Score</div>
+                            <div className={`text-xs font-bold ${SCORE_COLOR((selectedItem as DemoCandidate).score)}`}>{(selectedItem as DemoCandidate).score}% match</div>
+                          </div>
+                        </div>
+                        <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-3">
+                          <div className="text-[10px] text-emerald-400 font-semibold mb-1">⚡ Automations Triggered</div>
+                          <ul className="text-xs text-slate-400 space-y-1">
+                            <li>✓ CV parsed &amp; scored by AI</li>
+                            {(selectedItem as DemoCandidate).outreachSent && <li>✓ Outreach email sent automatically</li>}
+                            {(selectedItem as DemoCandidate).interviewScheduled && <li>✓ Interview self-scheduling link sent</li>}
+                            <li>✓ Hiring manager notified via Slack</li>
+                          </ul>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Consulting project detail */}
+                    {'client' in selectedItem && 'health' in selectedItem && (
+                      <div>
+                        <div className="flex items-center justify-between mb-5">
+                          <div>
+                            <div className="font-bold text-white text-lg">{(selectedItem as DemoProject).client}</div>
+                            <div className="text-sm text-slate-400 capitalize">{(selectedItem as DemoProject).status}</div>
+                          </div>
+                          <span className={`text-xs font-semibold px-3 py-1 rounded-full border ${HEALTH_BADGE[(selectedItem as DemoProject).health].cls}`}>
+                            {HEALTH_BADGE[(selectedItem as DemoProject).health].label}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3 mb-4">
+                          <div className="bg-slate-800 rounded-xl p-3">
+                            <div className="text-[10px] text-slate-500 mb-1">Last Report</div>
+                            <div className="text-xs text-white">{(selectedItem as DemoProject).lastReport}</div>
+                          </div>
+                          <div className="bg-slate-800 rounded-xl p-3">
+                            <div className="text-[10px] text-slate-500 mb-1">Invoice Status</div>
+                            <div className={`text-xs font-semibold capitalize ${(selectedItem as DemoProject).invoiceStatus === 'paid' ? 'text-emerald-400' : 'text-yellow-400'}`}>
+                              {(selectedItem as DemoProject).invoiceStatus}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-3">
+                          <div className="text-[10px] text-emerald-400 font-semibold mb-1">⚡ Active Automations</div>
+                          <ul className="text-xs text-slate-400 space-y-1">
+                            {(selectedItem as DemoProject).automations.map(a => (
+                              <li key={a}>✓ {a} running automatically</li>
+                            ))}
+                          </ul>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-72 text-slate-600">
+                    <ChevronRight className="w-8 h-8 mb-2 opacity-30" />
+                    <p className="text-sm">Click any row in Pipeline to see details</p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
