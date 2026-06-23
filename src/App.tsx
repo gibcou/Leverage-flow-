@@ -26,8 +26,8 @@ import heroImg from './assets/hero-flow.png'
 // Set price to $1,999/mo recurring (Starter) and $3,499/mo recurring (Growth)
 // Then paste the links below.
 const STRIPE_LINKS = {
-  starter: 'https://buy.stripe.com/REPLACE_WITH_STARTER_PAYMENT_LINK',
-  growth:  'https://buy.stripe.com/REPLACE_WITH_GROWTH_PAYMENT_LINK',
+  starter: 'https://buy.stripe.com/7sY3cp5kzcyw5wEaiD7N600',
+  growth:  'https://buy.stripe.com/7sY7sFcN1fKI0ck1M77N601',
 }
 
 // ─── FORMSPREE ENDPOINT ───────────────────────────────────────────────────────

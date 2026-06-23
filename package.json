@@ -6,8 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build && npm run build:demo && npm run build:internal",
-    "build:demo": "cd apps/demo && npm install && npm run build && cp -r dist/* ../../dist/demo/",
-    "build:internal": "cd apps/internal && npm install && npm run build && cp -r dist/* ../../dist/internal/",
+    "build:demo": "cd apps/demo && npm install && npm run build && mkdir -p ../../dist/demo && cp -r dist/. ../../dist/demo/",
+    "build:internal": "cd apps/internal && npm install && npm run build && mkdir -p ../../dist/internal && cp -r dist/. ../../dist/internal/",
     "build:setup": "mkdir -p dist/demo dist/internal",
     "lint": "eslint .",
     "preview": "vite preview"
